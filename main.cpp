@@ -1,36 +1,39 @@
 #include <malloc.h>
-#include "npy.hpp"
+#include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <iostream>
+
+#include "npy.hpp"
 
 int main()
 {
     std::vector<unsigned long> shape;
-    bool fortran_order;
     std::vector<double> data;
+    bool fortran_order;
 
     npy::LoadArrayFromNumpy("noise.npy", shape, fortran_order, data);
+
     std::cout << "shape: ";
     for (size_t i = 0; i<shape.size(); i++)
         std::cout << shape[i] << ", ";
     std::cout << std::endl;
 
-    uint8_t* d = (uint8_t*)malloc(sizeof(uint8_t) * data.size());
-    for (size_t i = 0; i<data.size(); i++)
-        d[i] = int(data[i] * 255);
-
-    cv::Mat M(cv::Size(shape[1], shape[0]), CV_8UC3, d);
-
     // std::cout << "fortran order: " << (fortran_order ? "+" : "-");
     // std::cout << std::endl;
 
     // std::cout << "data: ";
-    // for (size_t i = 0; i<data.size(); i++)
+    // for (size_t i = 0; i < data.size(); i++)
     //     std::cout << data[i] << ", ";
     // std::cout << std::endl << std::endl;
+
+    int* d = (int*)malloc(sizeof(int) * data.size());
+    for (size_t i = 0; i < data.size(); i++)
+        d[i] = int(data[i] * 255);
+
+
+    cv::Mat M(cv::Size(shape[1], shape[0]), CV_16SC3, d);
 
     cv::VideoCapture cap(0);
     if (!cap.isOpened()) {
@@ -38,9 +41,10 @@ int main()
         return 1;
     }
 
+    cv::Mat img;
+
     while(1) {
-        cv::Mat img;
-        bool bSuccess = cap.read(img); // read a new frame from video 
+        bool bSuccess = cap.read(img);
 
         // Breaking the while loop at the end of the video
         if (bSuccess == false) 
@@ -48,20 +52,41 @@ int main()
             std::cout << "Found the end of the video" << std::endl;
             break;
         }
-        cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
-        
-	// cv::Mat N(cv::Size(img.cols, img.rows), CV_8UC3, cv::Scalar(0));
-        // M.copyTo( N(cv::Rect( N.cols / 2 - shape[1] / 2, N.rows / 2 - shape[0] / 2, shape[1], shape[0] )) );
-        
-	cv::resize(img, img, cv::Size(M.rows, M.cols), cv::INTER_AREA);
 
-	img = img + M;
+        cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
+        cv::resize(img, img, cv::Size(M.rows, M.cols), cv::INTER_AREA);
+
+        for(int i=0; i<img.rows; i++) {
+            for(int j=0; j<img.cols; j++) {
+                // get pixel
+                cv::Vec3b color = img.at<cv::Vec3b>(cv::Point(i, j));
+                cv::Vec<int, 3> color1 = M.at<cv::Vec<int, 3>>(cv::Point(i, j));
+
+                for (size_t k = 0; k < 3; k++)
+                {
+                    if (color1[k] < 0) {
+                        if (int(color[k]) <= int((-color1[k])))
+                            color[k] = 0;
+                        else
+                            color[k] += color1[k];
+                    }
+                    else {
+                        if ( (255 - color[k]) <= color1[k])
+                            color[k] = 255;
+                        else
+                            color[k] += color1[k];
+                    }
+                }
+
+                // set pixel
+                color = cv::Vec<uchar, 3>(color);  
+                img.at<cv::Vec3b>(cv::Point(i, j)) = color;
+            }
+        }
 
         cv::cvtColor(img, img, cv::COLOR_RGB2BGR);
         cv::imshow("Display window", img);
         cv::waitKey(1); // Wait for a keystroke in the window
     }
-
     return 0;
 }
-
