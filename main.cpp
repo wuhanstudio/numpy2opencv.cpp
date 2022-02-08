@@ -48,9 +48,8 @@ int main(int argc, char* argv[])
     for (size_t i = 0; i < data.size(); i++)
         d[i] = int(data[i] * 255);
 
-    // cv::Mat M(cv::Size(shape[0], shape[1]), CV_32SC3, d);
-    
     cv::VideoCapture cap(0);
+
     if (!cap.isOpened()) {
         std::cerr << "ERROR: Could not open camera" << std::endl;
         return 1;
@@ -68,8 +67,9 @@ int main(int argc, char* argv[])
             break;
         }
 
-        cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
         cv::resize(img, img, cv::Size(1280, 720), cv::INTER_AREA);
+
+        // cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
 
         clock_t beginFrame = clock();
 
@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
         // for(int i = 0; i < img.rows; i++) {
         //     for(int j = 0; j < img.cols; j++) {
         //         // get pixel
-        //         cv::Vec3b color = img.at<cv::Vec3b>(i, j);
+        //         cv::Vec3b& color = img.at<cv::Vec3b>(i, j);
         //         int* color1 = &d[i * img.cols * 3 + j * 3 ];
         //         // cv::Vec<int, 3> color1 = M.at<cv::Vec<int, 3>>(i, j);
 
@@ -117,22 +117,18 @@ int main(int argc, char* argv[])
         //             for (size_t k = 0; k < 3; k++)
         //             {
         //                 if (color1[k] < 0) {
-        //                     if (int(color[k]) <= int((-color1[k])))
-        //                         color[k] = 0;
+        //                     if (int(color[2-k]) <= int((-color1[k])))
+        //                         color[2-k] = 0;
         //                     else
-        //                         color[k] += color1[k];
+        //                         color[2-k] += color1[k];
         //                 }
         //                 else {
-        //                     if ( (255 - color[k]) <= color1[k])
-        //                         color[k] = 255;
+        //                     if ( (255 - color[2-k]) <= color1[k])
+        //                         color[2-k] = 255;
         //                     else
-        //                         color[k] += color1[k];
+        //                         color[2-k] += color1[k];
         //                 }
         //             }
-
-        //             // set pixel
-        //             color = cv::Vec<uchar, 3>(color);  
-        //             img.at<cv::Vec3b>(i, j) = color;
         //         }
         //     }
         // }
@@ -152,7 +148,9 @@ int main(int argc, char* argv[])
 
             std::cout<<"CPU time was:"<<averageFrameTimeMilliseconds<<std::endl;
         }
-        cv::cvtColor(img, img, cv::COLOR_RGB2BGR);
+
+        // cv::cvtColor(img, img, cv::COLOR_RGB2BGR);
+
         cv::imshow("Display window", img);
         cv::waitKey(1); // Wait for a keystroke in the window
     }
