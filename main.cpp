@@ -67,7 +67,10 @@ int main(int argc, char* argv[])
             break;
         }
 
-        cv::resize(img, img, cv::Size(1280, 720), cv::INTER_AREA);
+        int width = img.cols;
+        int height = img.rows;
+
+        cv::resize(img, img, cv::Size(shape[0], shape[1]), cv::INTER_AREA);
 
         // cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
 
@@ -132,6 +135,8 @@ int main(int argc, char* argv[])
         //         }
         //     }
         // }
+
+        cv::resize(img, img, cv::Size(width, height), cv::INTER_AREA);
 
         clock_t endFrame = clock();
 
